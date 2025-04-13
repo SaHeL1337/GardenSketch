@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Carrot",
+    "width_m": 0.15,
+    "height_m": 0.3,
+    "color": "orange",
+    "favoriteNeighbours": ["Lettuce", "Tomato"]
+  },
+  {
+    "name": "Tomato",
+    "width_m": 0.5,
+    "height_m": 0.5,
+    "color": "red",
+    "favoriteNeighbours": ["Carrot"]
+  },
+  {
+    "name": "Lettuce",
+    "width_m": 0.3,
+    "height_m": 0.3,
+    "color": "lightgreen",
+    "favoriteNeighbours": ["Carrot", "Potato"]
+  },
+  {
+    "name": "Potato",
+    "width_m": 0.4,
+    "height_m": 0.75,
+    "color": "brown",
+    "favoriteNeighbours": ["Lettuce"]
+  }
+] 

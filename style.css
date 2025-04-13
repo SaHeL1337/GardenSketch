@@ -1,0 +1,87 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.crop-list-container {
+    width: 250px;
+    padding-right: 20px;
+    border-right: 1px solid #ccc;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#crop-filter {
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#crop-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto; /* Allow scrolling if list is long */
+}
+
+#crop-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+#crop-list li:hover {
+    background-color: #f0f0f0;
+}
+
+.crop-color-preview {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+}
+
+.garden-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-left: 20px;
+}
+
+#garden-canvas {
+    border: 1px solid black;
+    /* Max width/height to prevent overflow, will be adjusted by JS */
+    max-width: 100%;
+    max-height: calc(100vh - 120px); /* Adjust based on controls height */
+    /* aspect-ratio: 5 / 3; */ /* Removed: Let JS control dimensions directly */
+}
+
+.garden-controls {
+    margin-top: 20px;
+}
+
+.garden-controls label {
+    margin-right: 5px;
+}
+
+.garden-controls input {
+    width: 60px;
+    margin-right: 15px;
+    padding: 5px;
+} 
