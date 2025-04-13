@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const heightPx = crop.height_m * pixelsPerMeter;
         const xPx = crop.x * pixelsPerMeter;
         const yPx = crop.y * pixelsPerMeter;
-        const isSelected = crop.id === selectedCropId; // Using temporary variable from mousedown now
+        // const isSelected = crop.id === selectedCropId; // Commented out to resolve ReferenceError
 
         // Draw background color first (fallback)
         ctx.fillStyle = crop.color || '#eee';
@@ -223,39 +223,23 @@ document.addEventListener('DOMContentLoaded', () => {
             drawCropTextFallback(crop, xPx, yPx, widthPx, heightPx);
         }
 
-        // Draw border (reverted: always black, 1px)
+        // Draw border (always black, 1px)
         ctx.strokeStyle = 'black'; 
         ctx.lineWidth = 1;
         ctx.strokeRect(xPx, yPx, widthPx, heightPx);
 
+        // Draw text ONLY if no image was successfully drawn
+        // ... (Keep text drawing logic) ...
+
         // --- Icon Drawing Logic --- 
-        if (isSelected) { // Only draw icons if selected
-            const iconWidthReq = ICON_SIZE_PX;
-            const iconHeightReq = ICON_SIZE_PX;
-            const sideBySideWidthReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
-            const sideBySideHeightReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
-            const stackedWidthReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
-            const stackedHeightReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
-
-            let canDrawSideBySide = (widthPx >= sideBySideWidthReq && heightPx >= sideBySideHeightReq);
-            let canDrawStacked = (widthPx >= stackedWidthReq && heightPx >= stackedHeightReq);
-
-            if (canDrawSideBySide) {
-                // Draw side-by-side (horizontal) - Existing logic
-                const rowIconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
-                const singleIconX = rowIconX - ICON_SIZE_PX - ICON_SPACING_PX;
-                const iconY = yPx + ICON_PADDING_PX;
-                drawSingleIcon(singleIconX, iconY);
-                drawRowIcon(rowIconX, iconY);
-            } else if (canDrawStacked) {
-                // Draw stacked (vertical)
-                const iconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
-                const singleIconY = yPx + ICON_PADDING_PX;
-                const rowIconY = singleIconY + ICON_SIZE_PX + ICON_SPACING_PX;
-                drawSingleIcon(iconX, singleIconY);
-                drawRowIcon(iconX, rowIconY);
-            } 
-            // Else: Not enough space for either layout, don't draw icons
+        // Icons are drawn if space allows
+        const hasIconSpace = widthPx > (ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2) && heightPx > ICON_SIZE_PX + ICON_PADDING_PX * 2;
+        if (hasIconSpace) { 
+            const rowIconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
+            const singleIconX = rowIconX - ICON_SIZE_PX - ICON_SPACING_PX;
+            const iconY = yPx + ICON_PADDING_PX;
+            drawSingleIcon(singleIconX, iconY);
+            drawRowIcon(rowIconX, iconY);
         }
     }
 
