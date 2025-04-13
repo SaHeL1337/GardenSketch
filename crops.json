@@ -5,7 +5,7 @@
     "height_m": 0.3,
     "color": "orange",
     "favoriteNeighbours": ["Lettuce", "Tomato"],
-    "svgString": "<svg viewBox='0 0 15 30' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='carrotGrad' x1='0' y1='0' x2='1' y2='0'><stop offset='0%' stop-color='#ffcc80'/><stop offset='50%' stop-color='orange'/><stop offset='100%' stop-color='#e69500'/></linearGradient></defs><polygon points='0,5 15,5 12,28 3,28' fill='url(#carrotGrad)' stroke='#c60' stroke-width='0.3'/><path d='M 2 10 L 13 10 M 2 15 L 13 15 M 3 20 L 12 20 M 4 25 L 11 25' stroke='#e69500' stroke-width='0.4' opacity='0.6'/><path d='M5 0 Q 7.5 3 10 0 L 12 5 L 3 5 Z' fill='green' stroke='darkgreen' stroke-width='0.3'/></svg>"
+    "svgString": "<svg viewBox='0 0 15 30' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='carrotGrad' x1='0' y1='0' x2='1' y2='0'><stop offset='0%' stop-color='#ffeda0'/><stop offset='30%' stop-color='orange'/><stop offset='100%' stop-color='#e69500'/></linearGradient><linearGradient id='carrotLeafGrad' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='lightgreen'/><stop offset='100%' stop-color='green'/></linearGradient><filter id='carrotTexture'><feTurbulence type='fractalNoise' baseFrequency='0.3 0.1' numOctaves='1' seed='10' result='texture'/><feColorMatrix in='texture' type='saturate' values='0.2' result='textureS'/><feComponentTransfer in='textureS' result='textureO'><feFuncA type='linear' slope='0.1'/></feComponentTransfer><feMerge><feMergeNode in='SourceGraphic'/><feMergeNode in='textureO'/></feMerge></filter></defs><g filter='url(#carrotTexture)'><polygon points='0,5 15,5 12,28 3,28' fill='url(#carrotGrad)' stroke='#c60' stroke-width='0.3'/></g><path d='M 2 10 L 13 10 M 2 15 L 13 15 M 3 20 L 12 20 M 4 25 L 11 25' stroke='#e69500' stroke-width='0.4' opacity='0.5'/><path d='M7.5 0 C 5 3, 3 3, 3 5 L 12 5 C 12 3, 10 3, 7.5 0 Z M5 1 C 6 3, 9 3, 10 1' fill='url(#carrotLeafGrad)' stroke='darkgreen' stroke-width='0.3'/></svg>"
   },
   {
     "name": "Tomato",
@@ -13,7 +13,7 @@
     "height_m": 0.5,
     "color": "red",
     "favoriteNeighbours": ["Carrot"],
-    "svgString": "<svg viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='tomatoGrad' cx='0.3' cy='0.3' r='0.7'><stop offset='0%' stop-color='#ff8080'/><stop offset='100%' stop-color='red'/></radialGradient></defs><rect width='50' height='50' fill='#eee'/><circle cx='25' cy='28' r='20' fill='url(#tomatoGrad)' stroke='darkred' stroke-width='0.5'/><ellipse cx='18' cy='20' rx='5' ry='3' fill='white' opacity='0.3' transform='rotate(-30 18 20)'/><path d='M25,8 C 22,12 18,13 18,18 L 25,14 L 32,18 C 32,13 28,12 25,8 Z' fill='green' stroke='darkgreen' stroke-width='0.5'/></svg>"
+    "svgString": "<svg viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='tomatoGrad' cx='0.3' cy='0.3' r='0.7' fx='0.35' fy='0.35'><stop offset='0%' stop-color='#ffcccb'/><stop offset='60%' stop-color='red'/><stop offset='100%' stop-color='darkred'/></radialGradient><linearGradient id='tomatoleafGrad' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#90ee90'/><stop offset='100%' stop-color='green'/></linearGradient></defs><rect width='50' height='50' fill='#eee'/><circle cx='25' cy='28' r='20' fill='url(#tomatoGrad)' stroke='darkred' stroke-width='0.5'/><ellipse cx='18' cy='20' rx='6' ry='4' fill='white' opacity='0.2' transform='rotate(-30 18 20)'/><path d='M25,8 C 22,12 18,13 18,18 L 20 15 L 25 14 L 30 15 L 32,18 C 32,13 28,12 25,8 Z' fill='url(#tomatoleafGrad)' stroke='darkgreen' stroke-width='0.5'/></svg>"
   },
   {
     "name": "Lettuce",
@@ -21,7 +21,7 @@
     "height_m": 0.3,
     "color": "lightgreen",
     "favoriteNeighbours": ["Carrot", "Potato"],
-    "svgString": "<svg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='lettuceGrad' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#eaffea'/><stop offset='100%' stop-color='lightgreen'/></linearGradient></defs><rect width='30' height='30' fill='#f0fff0'/><path d='M2 28 C 8 12, 22 12, 28 28 C 24 18, 16 18, 15 24 C 14 18, 6 18, 2 28 Z' fill='url(#lettuceGrad)' stroke='#5a5' stroke-width='0.4' filter='url(#lettuceBlur)'/><path d='M5 25 C 10 15, 20 15, 25 25 C 22 20, 18 20, 15 24 C 12 20, 8 20, 5 25 Z' fill='#b0ffb0' stroke='#5a5' stroke-width='0.4' opacity='0.8'/><path d='M8 23 C 12 18, 18 18, 22 23 C 19 21, 16 21, 15 22 C 14 21, 11 21, 8 23 Z' fill='#d0ffd0' opacity='0.6'/></svg>"
+    "svgString": "<svg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='lettuceGrad1' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#f0fff0'/><stop offset='100%' stop-color='lightgreen'/></linearGradient><linearGradient id='lettuceGrad2' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#d0ffd0'/><stop offset='100%' stop-color='#90ee90'/></linearGradient><linearGradient id='lettuceGrad3' x1='1' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#e0ffe0'/><stop offset='100%' stop-color='#b0ffb0'/></linearGradient><filter id='lettuceShadow'><feDropShadow dx='1' dy='1' stdDeviation='0.5' flood-color='#333' flood-opacity='0.4'/></filter></defs><rect width='30' height='30' fill='#fafffa'/><g filter='url(#lettuceShadow)'><path d='M2 28 C 8 12, 22 12, 28 28 C 26 18, 18 15, 15 24 C 12 15, 4 18, 2 28 Z' fill='url(#lettuceGrad1)' stroke='#5a5' stroke-width='0.4'/><path d='M5 25 C 10 15, 20 15, 25 25 C 22 20, 18 18, 15 23 C 12 18, 8 20, 5 25 Z' fill='url(#lettuceGrad2)' stroke='#5a5' stroke-width='0.4' opacity='0.9'/><path d='M8 23 C 12 18, 18 18, 22 23 C 19 21, 16 20, 15 22 C 14 20, 11 21, 8 23 Z' fill='url(#lettuceGrad3)' opacity='0.8'/></g></svg>"
   },
   {
     "name": "Potato",
@@ -29,6 +29,46 @@
     "height_m": 0.75,
     "color": "brown",
     "favoriteNeighbours": ["Lettuce"],
-    "svgString": "<svg viewBox='0 0 40 75' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='potatoGrad' cx='0.4' cy='0.4' r='0.8'><stop offset='0%' stop-color='#b98c61'/><stop offset='100%' stop-color='#a05a2c'/></radialGradient></defs><rect width='40' height='75' fill='tan'/><ellipse cx='20' cy='37.5' rx='18' ry='35' fill='url(#potatoGrad)' stroke='#5c4033' stroke-width='0.5'/><ellipse cx='15' cy='25' rx='2' ry='1.5' fill='#5c4033' opacity='0.7'/><ellipse cx='28' cy='35' rx='1.5' ry='1' fill='#5c4033' opacity='0.7'/><ellipse cx='20' cy='55' rx='1.8' ry='1.2' fill='#5c4033' opacity='0.7'/></svg>" 
+    "svgString": "<svg viewBox='0 0 40 75' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='potatoGrad' cx='0.4' cy='0.4' r='0.8'><stop offset='0%' stop-color='#d2b48c'/><stop offset='50%' stop-color='#a05a2c'/><stop offset='100%' stop-color='#5c4033'/></radialGradient><filter id='potatoEye'><feGaussianBlur stdDeviation='0.3'/></filter><filter id='potatoSkin'><feTurbulence type='fractalNoise' baseFrequency='0.1' numOctaves='2' seed='42' result='noise'/><feColorMatrix type='saturate' values='0' in='noise' result='monoNoise'/><feComponentTransfer in='monoNoise' result='alphaNoise'><feFuncA type='linear' slope='0.1'/></feComponentTransfer><feMerge><feMergeNode in='SourceGraphic'/><feMergeNode in='alphaNoise'/></feMerge></filter></defs><rect width='40' height='75' fill='tan'/><g filter='url(#potatoSkin)'><ellipse cx='20' cy='37.5' rx='18' ry='35' fill='url(#potatoGrad)' stroke='#5c4033' stroke-width='0.5'/></g><g filter='url(#potatoEye)'><ellipse cx='15' cy='25' rx='2.5' ry='2' fill='#5c4033'/><ellipse cx='28' cy='35' rx='2' ry='1.5' fill='#5c4033'/><ellipse cx='20' cy='55' rx='2.2' ry='1.8' fill='#5c4033'/></g></svg>" 
+  },
+  {
+    "name": "Kohlrabi",
+    "width_m": 0.3,
+    "height_m": 0.3,
+    "color": "#90EE90",
+    "favoriteNeighbours": ["Beans", "Lettuce"],
+    "svgString": "<svg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='kohlrabiGrad' cx='0.5' cy='0.5' r='0.6' fx='0.3' fy='0.3'><stop offset='0%' stop-color='#f0fff0'/><stop offset='100%' stop-color='lightgreen'/></radialGradient><linearGradient id='kLeafGrad' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#b0ffb0'/><stop offset='100%' stop-color='green'/></linearGradient><filter id='leafVein'><feTurbulence type='fractalNoise' baseFrequency='0.05 0.2' numOctaves='1' seed='5' result='noise'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0.5 0 0 0 0 0.3 0 0 0 0.1 0' in='noise' result='vein'/><feMerge><feMergeNode in='SourceGraphic'/><feMergeNode in='vein'/></feMerge></filter></defs><g filter='url(#leafVein)'><path d='M15 13 L 5 5 Q 4 10 8 12 Z M15 13 L 25 5 Q 26 10 22 12 Z M15 13 L 10 2 Q 13 6 15 7 Q 17 6 20 2 Z' fill='url(#kLeafGrad)' stroke='darkgreen' stroke-width='0.5'/></g><circle cx='15' cy='20' r='8' fill='url(#kohlrabiGrad)' stroke='green' stroke-width='0.5'/></svg>"
+  },
+  {
+    "name": "Radish",
+    "width_m": 0.1,
+    "height_m": 0.15,
+    "color": "deeppink",
+    "favoriteNeighbours": ["Carrot", "Lettuce"],
+    "svgString": "<svg viewBox='0 0 10 15' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='radishGrad' cx='0.3' cy='0.3' r='0.8' fx='0.35' fy='0.35'><stop offset='0%' stop-color='white'/><stop offset='20%' stop-color='#ffb6c1'/><stop offset='100%' stop-color='red'/></radialGradient><linearGradient id='rLeafGrad' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='lightgreen'/><stop offset='100%' stop-color='green'/></linearGradient></defs><path d='M5 6 L 2 2 M5 6 L 8 2 M 4 0 L 6 0' fill='none' stroke='url(#rLeafGrad)' stroke-width='0.6'/><path d='M5 14 Q 4 15 5 16 Q 6 15 5 14 ' fill='pink' stroke='#f08080' stroke-width='0.4'/><circle cx='5' cy='10' r='4' fill='url(#radishGrad)' stroke='darkred' stroke-width='0.3'/><ellipse cx='4' cy='8' rx='1.2' ry='0.6' fill='white' opacity='0.15' transform='rotate(-45 4 8)'/></svg>"
+  },
+  {
+    "name": "Zucchini",
+    "width_m": 0.8,
+    "height_m": 0.8,
+    "color": "#2E8B57",
+    "favoriteNeighbours": ["Beans"],
+    "svgString": "<svg viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='zuccGrad' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#c1ffc1'/><stop offset='50%' stop-color='darkgreen'/><stop offset='100%' stop-color='#004000'/></linearGradient><filter id='zuccTexture'><feTurbulence type='fractalNoise' baseFrequency='0.02 0.1' numOctaves='2' seed='20' result='noise'/><feColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.15 0' in='noise' result='texture'/><feMerge><feMergeNode in='SourceGraphic'/><feMergeNode in='texture'/></feMerge></filter></defs><rect width='80' height='80' fill='#eee'/><g filter='url(#zuccTexture)'><ellipse cx='40' cy='40' rx='15' ry='35' fill='url(#zuccGrad)' stroke='#003300' stroke-width='0.5' transform='rotate(30 40 40)'/></g><path d='M 30 20 Q 40 40 50 60 M 35 15 Q 45 40 55 65 M 25 25 Q 35 45 45 65' stroke='#90ee90' stroke-width='0.8' opacity='0.2' transform='rotate(30 40 40)'/><ellipse cx='35' cy='30' rx='8' ry='4' fill='white' opacity='0.1' transform='rotate(30 40 40)' /></svg>"
+  },
+  {
+    "name": "Cucumber",
+    "width_m": 0.5,
+    "height_m": 1.5,
+    "color": "green",
+    "favoriteNeighbours": ["Beans", "Lettuce"],
+    "svgString": "<svg viewBox='0 0 50 150' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='cucuGrad' x1='0' y1='0' x2='1' y2='0'><stop offset='0%' stop-color='#d0ffd0'/><stop offset='50%' stop-color='green'/><stop offset='100%' stop-color='darkgreen'/></linearGradient><filter id='cucuBump'><feTurbulence type='fractalNoise' baseFrequency='0.1 0.5' numOctaves='3' seed='55' result='noise'/><feDiffuseLighting in='noise' lighting-color='#c0ffc0' surfaceScale='1.5' result='light'><feDistantLight azimuth='45' elevation='60'/></feDiffuseLighting><feComposite in='SourceGraphic' in2='light' operator='arithmetic' k1='1' k2='0' k3='0.5' k4='0'/></filter></defs><rect width='50' height='150' fill='#eee'/><ellipse filter='url(#cucuBump)' cx='25' cy='75' rx='10' ry='70' fill='url(#cucuGrad)' stroke='darkgreen' stroke-width='0.5'/></svg>"
+  },
+  {
+    "name": "Bush Bean",
+    "width_m": 0.2,
+    "height_m": 0.5,
+    "color": "#8FBC8F",
+    "favoriteNeighbours": ["Carrot", "Potato", "Cucumber", "Kohlrabi"],
+    "svgString": "<svg viewBox='0 0 20 50' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='beanGrad' x1='0' y1='0' x2='1' y2='0'><stop offset='0%' stop-color='#c1ffc1'/><stop offset='50%' stop-color='#556B2F'/><stop offset='100%' stop-color='#3e4f24'/></linearGradient></defs><rect width='20' height='50' fill='#eee'/><path d='M10 0 Q 8 5 10 5 Q 12 5 10 0' fill='#4a5e32'/><ellipse cx='10' cy='25' rx='4' ry='20' fill='url(#beanGrad)' stroke='#3e4f24' stroke-width='0.4'/><path d='M10 8 C 8 15, 8 35, 10 42' stroke='#3e4f24' stroke-width='0.3' fill='none' opacity='0.4'/><ellipse cx='8' cy='15' rx='1.5' ry='1' fill='white' opacity='0.1' transform='rotate(-20 8 15)'/></svg>"
   }
 ] 
