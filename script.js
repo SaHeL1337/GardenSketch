@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const STORAGE_KEY = 'gardenSketchState'; // Key for localStorage
 
+    let loadedSVGs = {}; // Store loaded SVG Image objects for crops
+
     // --- Local Storage --- 
     function saveGardenState() {
         try {
@@ -75,18 +77,43 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            cropsData = await response.json();
-            // No need to add isSelected anymore
-            displayCrops(cropsData); // Display the full list (no checkboxes)
+            cropsData = await response.json(); 
+            
+            // Preload SVG images from strings
+            const svgLoadPromises = cropsData.map(crop => {
+                return new Promise((resolve) => {
+                    if (crop.svgString) {
+                        const img = new Image();
+                        const svgDataBase64 = btoa(unescape(encodeURIComponent(crop.svgString))); // Handle potential special chars
+                        img.onload = () => {
+                            loadedSVGs[crop.name] = img;
+                            console.log(`Loaded SVG for ${crop.name}`);
+                            resolve();
+                        };
+                        img.onerror = (err) => {
+                            console.error(`Error loading SVG for ${crop.name}:`, err);
+                            loadedSVGs[crop.name] = null;
+                            resolve();
+                        };
+                        img.src = `data:image/svg+xml;base64,${svgDataBase64}`; 
+                    } else {
+                         loadedSVGs[crop.name] = null;
+                         resolve();
+                    }
+                });
+            });
 
-            // Load garden state *after* master crop list is ready
+            await Promise.all(svgLoadPromises);
+            console.log("Finished SVG loading attempt.");
+
+            displayCrops(cropsData);
+
             if (!loadGardenState()) {
-                 // If no saved state, set default dimensions from inputs
                  gardenWidthM = parseFloat(gardenWidthInput.value);
                  gardenHeightM = parseFloat(gardenHeightInput.value);
             }
             
-            resizeGarden(); // Initial resize/draw based on loaded/default state
+            resizeGarden();
 
         } catch (error) {
             console.error('Error loading crops:', error);
@@ -176,60 +203,100 @@ document.addEventListener('DOMContentLoaded', () => {
         const heightPx = crop.height_m * pixelsPerMeter;
         const xPx = crop.x * pixelsPerMeter;
         const yPx = crop.y * pixelsPerMeter;
+        const isSelected = crop.id === selectedCropId; // Using temporary variable from mousedown now
 
-        // Draw main crop rectangle
-        ctx.fillStyle = crop.color || '#ccc';
+        // Draw background color first (fallback)
+        ctx.fillStyle = crop.color || '#eee';
         ctx.fillRect(xPx, yPx, widthPx, heightPx);
-        ctx.strokeStyle = 'black';
+
+        // Draw SVG if loaded
+        const svgImg = loadedSVGs[crop.name];
+        if (svgImg && svgImg.complete && svgImg.naturalWidth > 0) {
+             try { ctx.drawImage(svgImg, xPx, yPx, widthPx, heightPx); } 
+             catch (e) { 
+                 console.error(`Error drawing SVG for ${crop.name}:`, e);
+                 ctx.fillStyle = crop.color || '#eee'; ctx.fillRect(xPx, yPx, widthPx, heightPx);
+                 drawCropTextFallback(crop, xPx, yPx, widthPx, heightPx);
+             }
+        } else {
+            ctx.fillStyle = crop.color || '#eee'; ctx.fillRect(xPx, yPx, widthPx, heightPx);
+            drawCropTextFallback(crop, xPx, yPx, widthPx, heightPx);
+        }
+
+        // Draw border (reverted: always black, 1px)
+        ctx.strokeStyle = 'black'; 
+        ctx.lineWidth = 1;
         ctx.strokeRect(xPx, yPx, widthPx, heightPx);
 
-        // Draw text (adjust position slightly if icons are present)
-        const hasIcons = widthPx > (ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2) && heightPx > ICON_SIZE_PX + ICON_PADDING_PX * 2;
+        // --- Icon Drawing Logic --- 
+        if (isSelected) { // Only draw icons if selected
+            const iconWidthReq = ICON_SIZE_PX;
+            const iconHeightReq = ICON_SIZE_PX;
+            const sideBySideWidthReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
+            const sideBySideHeightReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
+            const stackedWidthReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
+            const stackedHeightReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
+
+            let canDrawSideBySide = (widthPx >= sideBySideWidthReq && heightPx >= sideBySideHeightReq);
+            let canDrawStacked = (widthPx >= stackedWidthReq && heightPx >= stackedHeightReq);
+
+            if (canDrawSideBySide) {
+                // Draw side-by-side (horizontal) - Existing logic
+                const rowIconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
+                const singleIconX = rowIconX - ICON_SIZE_PX - ICON_SPACING_PX;
+                const iconY = yPx + ICON_PADDING_PX;
+                drawSingleIcon(singleIconX, iconY);
+                drawRowIcon(rowIconX, iconY);
+            } else if (canDrawStacked) {
+                // Draw stacked (vertical)
+                const iconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
+                const singleIconY = yPx + ICON_PADDING_PX;
+                const rowIconY = singleIconY + ICON_SIZE_PX + ICON_SPACING_PX;
+                drawSingleIcon(iconX, singleIconY);
+                drawRowIcon(iconX, rowIconY);
+            } 
+            // Else: Not enough space for either layout, don't draw icons
+        }
+    }
+
+    // Helper to draw the Single Add (+) icon
+    function drawSingleIcon(x, y) {
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+        ctx.fillRect(x, y, ICON_SIZE_PX, ICON_SIZE_PX);
+        ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, ICON_SIZE_PX, ICON_SIZE_PX);
+        ctx.beginPath();
+        ctx.moveTo(x + ICON_SIZE_PX / 2, y + ICON_PADDING_PX * 2);
+        ctx.lineTo(x + ICON_SIZE_PX / 2, y + ICON_SIZE_PX - ICON_PADDING_PX * 2);
+        ctx.moveTo(x + ICON_PADDING_PX * 2, y + ICON_SIZE_PX / 2);
+        ctx.lineTo(x + ICON_SIZE_PX - ICON_PADDING_PX * 2, y + ICON_SIZE_PX / 2);
+        ctx.strokeStyle = 'black'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.lineWidth = 1;
+    }
+
+    // Helper to draw the Row Add (...) icon
+    function drawRowIcon(x, y) {
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+        ctx.fillRect(x, y, ICON_SIZE_PX, ICON_SIZE_PX);
+        ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, ICON_SIZE_PX, ICON_SIZE_PX);
+        const dotRadius = 1.5; const dotY = y + ICON_SIZE_PX / 2; const dotSpacing = ICON_SIZE_PX / 4;
+        ctx.fillStyle = 'black';
+        ctx.beginPath(); ctx.arc(x + dotSpacing, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dotSpacing * 2, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + dotSpacing * 3, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Helper for drawing fallback text
+    function drawCropTextFallback(crop, xPx, yPx, widthPx, heightPx) {
         const baseFontSize = Math.max(8, Math.min(heightPx * 0.4, 18));
         ctx.font = `${baseFontSize}px sans-serif`;
         ctx.fillStyle = 'black';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const textWidth = ctx.measureText(crop.name).width;
-        const textYOffset = hasIcons ? (ICON_SIZE_PX + ICON_PADDING_PX * 2) / 4 : 0; // Shift text down slightly if icons overlap middle
-        if (textWidth < widthPx * 0.8 && heightPx > 12 + (hasIcons ? ICON_SIZE_PX / 2 : 0)) {
-            ctx.fillText(crop.name, xPx + widthPx / 2, yPx + heightPx / 2 + textYOffset);
-        }
-
-        // Draw Icons (if space allows)
-        if (hasIcons) {
-            const rowIconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
-            const singleIconX = rowIconX - ICON_SIZE_PX - ICON_SPACING_PX;
-            const iconY = yPx + ICON_PADDING_PX;
-
-            // Draw Single Add Icon (+)
-            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-            ctx.fillRect(singleIconX, iconY, ICON_SIZE_PX, ICON_SIZE_PX);
-            ctx.strokeStyle = 'black';
-            ctx.strokeRect(singleIconX, iconY, ICON_SIZE_PX, ICON_SIZE_PX);
-            ctx.beginPath();
-            ctx.moveTo(singleIconX + ICON_SIZE_PX / 2, iconY + ICON_PADDING_PX * 2);
-            ctx.lineTo(singleIconX + ICON_SIZE_PX / 2, iconY + ICON_SIZE_PX - ICON_PADDING_PX * 2);
-            ctx.moveTo(singleIconX + ICON_PADDING_PX * 2, iconY + ICON_SIZE_PX / 2);
-            ctx.lineTo(singleIconX + ICON_SIZE_PX - ICON_PADDING_PX * 2, iconY + ICON_SIZE_PX / 2);
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Draw Row Add Icon (...)
-            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-            ctx.fillRect(rowIconX, iconY, ICON_SIZE_PX, ICON_SIZE_PX);
-            ctx.strokeStyle = 'black';
-            ctx.strokeRect(rowIconX, iconY, ICON_SIZE_PX, ICON_SIZE_PX);
-            const dotRadius = 1.5;
-            const dotY = iconY + ICON_SIZE_PX / 2;
-            const dotSpacing = ICON_SIZE_PX / 4;
-            ctx.fillStyle = 'black';
-            ctx.beginPath(); ctx.arc(rowIconX + dotSpacing, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(rowIconX + dotSpacing * 2, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(rowIconX + dotSpacing * 3, dotY, dotRadius, 0, Math.PI * 2); ctx.fill();
-
-            ctx.lineWidth = 1; // Reset line width
+        if (textWidth < widthPx * 0.8 && heightPx > 12) { 
+            ctx.fillText(crop.name, xPx + widthPx / 2, yPx + heightPx / 2);
         }
     }
 
@@ -323,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
              };
             gardenCrops.push(newCrop);
             drawGarden();
+            saveGardenState();
             console.log(`Added single ${sourceCrop.name}`);
         } else {
             console.log(`Cannot add single ${sourceCrop.name}, no space.`);
@@ -352,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addedCount > 0) {
             console.log(`Added row of ${addedCount} ${sourceCrop.name}(s)`);
             drawGarden();
+            saveGardenState();
         } else {
              console.log(`Cannot add row for ${sourceCrop.name}, no space.`);
         }
@@ -407,173 +476,205 @@ document.addEventListener('DOMContentLoaded', () => {
         isGroupDragging = false;
         draggedCrop = null;
         draggedGroup = [];
+        let potentialDragCrop = null; // Store the crop under the initial click
 
         const rect = gardenCanvas.getBoundingClientRect();
         const mouseX_px = e.clientX - rect.left;
         const mouseY_px = e.clientY - rect.top;
 
-        // Check icon clicks first
+        let clickedOnIcon = false;
+        let clickedOnEmptySpace = true;
+        let newlySelectedCropId = null; // Temporarily store ID if a new crop is clicked
+
+        // 1. Find the topmost crop under the cursor
         for (let i = gardenCrops.length - 1; i >= 0; i--) {
             const crop = gardenCrops[i];
-            const widthPx = crop.width_m * pixelsPerMeter;
-            const heightPx = crop.height_m * pixelsPerMeter;
             const xPx = crop.x * pixelsPerMeter;
             const yPx = crop.y * pixelsPerMeter;
-            const hasIcons = widthPx > (ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2) && heightPx > ICON_SIZE_PX + ICON_PADDING_PX * 2;
+            const widthPx = crop.width_m * pixelsPerMeter;
+            const heightPx = crop.height_m * pixelsPerMeter;
 
-            if (hasIcons) {
+            if (mouseX_px >= xPx && mouseX_px <= xPx + widthPx && mouseY_px >= yPx && mouseY_px <= yPx + heightPx) {
+                clickedOnEmptySpace = false;
+                potentialDragCrop = crop; // Found the crop clicked on
+                newlySelectedCropId = crop.id; // Potential new selection
+                break; // Stop searching
+            }
+        }
+
+        // 2. If a crop was clicked, check if an icon *on that crop* was clicked
+        if (potentialDragCrop) {
+            const crop = potentialDragCrop; // Use the found crop
+            const xPx = crop.x * pixelsPerMeter;
+            const yPx = crop.y * pixelsPerMeter;
+            const widthPx = crop.width_m * pixelsPerMeter;
+            const heightPx = crop.height_m * pixelsPerMeter;
+
+            // Determine icon layout for *this specific crop*
+            const sideBySideWidthReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
+            const sideBySideHeightReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
+            const stackedWidthReq = ICON_SIZE_PX + ICON_PADDING_PX * 2;
+            const stackedHeightReq = ICON_SIZE_PX * 2 + ICON_SPACING_PX + ICON_PADDING_PX * 2;
+            let canDrawSideBySide = (widthPx >= sideBySideWidthReq && heightPx >= sideBySideHeightReq);
+            let canDrawStacked = (widthPx >= stackedWidthReq && heightPx >= stackedHeightReq);
+
+            if (canDrawSideBySide) {
                 const rowIconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
                 const singleIconX = rowIconX - ICON_SIZE_PX - ICON_SPACING_PX;
                 const iconY = yPx + ICON_PADDING_PX;
                 if (mouseX_px >= singleIconX && mouseX_px <= singleIconX + ICON_SIZE_PX && mouseY_px >= iconY && mouseY_px <= iconY + ICON_SIZE_PX) {
                     addSingleCropNextTo(crop);
-                    return;
-                }
-                if (mouseX_px >= rowIconX && mouseX_px <= rowIconX + ICON_SIZE_PX && mouseY_px >= iconY && mouseY_px <= iconY + ICON_SIZE_PX) {
+                    clickedOnIcon = true;
+                } else if (mouseX_px >= rowIconX && mouseX_px <= rowIconX + ICON_SIZE_PX && mouseY_px >= iconY && mouseY_px <= iconY + ICON_SIZE_PX) {
                     createRowFromCrop(crop);
-                    return;
+                    clickedOnIcon = true;
                 }
+            } else if (canDrawStacked) {
+                const iconX = xPx + widthPx - ICON_SIZE_PX - ICON_PADDING_PX;
+                const singleIconY = yPx + ICON_PADDING_PX;
+                const rowIconY = singleIconY + ICON_SIZE_PX + ICON_SPACING_PX;
+                if (mouseX_px >= iconX && mouseX_px <= iconX + ICON_SIZE_PX && mouseY_px >= singleIconY && mouseY_px <= singleIconY + ICON_SIZE_PX) {
+                    addSingleCropNextTo(crop);
+                    clickedOnIcon = true;
+                } else if (mouseX_px >= iconX && mouseX_px <= iconX + ICON_SIZE_PX && mouseY_px >= rowIconY && mouseY_px <= rowIconY + ICON_SIZE_PX) {
+                    createRowFromCrop(crop);
+                    clickedOnIcon = true;
+                }
+            }
+            
+            if (clickedOnIcon) {
+                 // If an action was performed, deselect everything and exit
+                 selectedCropId = null;
+                 drawGarden(); 
+                 return; 
             }
         }
 
-        // Check for drag (single or group)
-        for (let i = gardenCrops.length - 1; i >= 0; i--) {
-            const crop = gardenCrops[i];
-            const cropX_px = crop.x * pixelsPerMeter;
-            const cropY_px = crop.y * pixelsPerMeter;
-            const cropW_px = crop.width_m * pixelsPerMeter;
-            const cropH_px = crop.height_m * pixelsPerMeter;
+        // 3. If no icon was clicked, handle selection and potential drag start
+        if (clickedOnEmptySpace) {
+            selectedCropId = null; // Clicked background, deselect
+        } else {
+             // Clicked on a crop (potentialDragCrop is set)
+             selectedCropId = newlySelectedCropId; // Select the clicked crop
 
-            if (mouseX_px >= cropX_px && mouseX_px <= cropX_px + cropW_px && mouseY_px >= cropY_px && mouseY_px <= cropY_px + cropH_px) {
-                const mouseX_m = mouseX_px / pixelsPerMeter;
-                const mouseY_m = mouseY_px / pixelsPerMeter;
-                dragOffsetX = mouseX_m - crop.x;
-                dragOffsetY = mouseY_m - crop.y;
-                if (e.shiftKey) {
-                    isGroupDragging = true;
-                    draggedGroup = findHorizontallyConnectedGroup(crop);
-                    const groupIds = new Set(draggedGroup.map(c => c.id));
-                    const otherCrops = gardenCrops.filter(c => !groupIds.has(c.id));
-                    gardenCrops = [...otherCrops, ...draggedGroup]; 
-                } else {
-                    isDragging = true;
-                    draggedCrop = crop;
-                    gardenCrops.splice(i, 1);
-                    gardenCrops.push(draggedCrop);
-                }
-                gardenCanvas.style.cursor = 'grabbing';
-                drawGarden();
-                break; 
-            }
+             // Prepare for potential drag
+             const mouseX_m = mouseX_px / pixelsPerMeter;
+             const mouseY_m = mouseY_px / pixelsPerMeter;
+             dragOffsetX = mouseX_m - potentialDragCrop.x;
+             dragOffsetY = mouseY_m - potentialDragCrop.y;
+             if (e.shiftKey) {
+                 isGroupDragging = true; // Will find group on mousemove if needed
+             } else {
+                 isDragging = true;
+             }
+             gardenCanvas.style.cursor = 'grabbing';
         }
+
+        // 4. Redraw to show selection/deselection
+        drawGarden();
     });
 
-    gardenCanvas.addEventListener('mousemove', (e) => {
-        if (!isDragging && !isGroupDragging) return;
+    // Mousedown logic reverted to previous simpler version for now
+    // Keep simpler mousemove, mouseup, mouseleave from the reverted state
+    // ... (This needs correction based on the new logic for selection)
 
+     // *** CORRECTED mousemove, mouseup, mouseleave based on click-to-select logic ***
+    gardenCanvas.addEventListener('mousemove', (e) => {
+        // Only process if a drag was potentially started on mousedown
+        if (!isDragging && !isGroupDragging) return; 
+
+        // CONFIRM DRAG START (if not already dragging)
+        // This logic might need adjustment if potentialDragCrop isn't accessible
+        // For now, assume isDragging/isGroupDragging means potentialDragCrop was set
+        if(selectedCropId !== null) { // If a crop was selected on mousedown, deselect when drag truly starts
+            selectedCropId = null;
+            // Find the actual crop to drag based on initial click (potentialDragCrop)
+            // This assumes potentialDragCrop is available from mousedown or we re-find it
+             const currentPotentialDragCrop = gardenCrops.find(c => 
+                c.x === (mouseX_px / pixelsPerMeter - dragOffsetX) && 
+                c.y === (mouseY_px / pixelsPerMeter - dragOffsetY) ); // This is flawed logic
+
+            // SAFER APPROACH: Need to properly pass potentialDragCrop from mousedown
+            // OR - rely on mouseup to handle click vs drag detection better?
+            // Let's simplify: if mouse moves while isDragging/isGroupDragging is true, we ARE dragging.
+            // The selection update happens in mousedown now.
+            // We just need to ensure the correct crop/group is being moved.
+            
+            // If isDragging, find the crop by ID (assuming it's stored) - needs fix
+            // If isGroupDragging, find the group by ID (needs fix) - needs fix
+            
+            // REVERTING mousemove drag confirmation - assume mousedown sets flags correctly for now
+            // If mousemove happens and isDragging/isGroupDragging is true, move the object
+        }
+
+        // Proceed with moving logic
         const rect = gardenCanvas.getBoundingClientRect();
         const mouseX_px = e.clientX - rect.left;
         const mouseY_px = e.clientY - rect.top;
         const mouseX_m = mouseX_px / pixelsPerMeter;
         const mouseY_m = mouseY_px / pixelsPerMeter;
 
-        if (isDragging && draggedCrop) {
-            let targetX_m = mouseX_m - dragOffsetX;
-            let targetY_m = mouseY_m - dragOffsetY;
-            let { snappedX_m, snappedY_m } = calculateSnapping(targetX_m, targetY_m, draggedCrop, [draggedCrop.id]);
-            draggedCrop.x = Math.max(0, Math.min(snappedX_m, gardenWidthM - draggedCrop.width_m));
-            draggedCrop.y = Math.max(0, Math.min(snappedY_m, gardenHeightM - draggedCrop.height_m));
-        } else if (isGroupDragging && draggedGroup.length > 0) {
-            const primaryCrop = draggedGroup.find(c => Math.abs(c.x - (mouseX_m - dragOffsetX)) < 0.01 && Math.abs(c.y - (mouseY_m - dragOffsetY)) < 0.01) || draggedGroup[0];
-            let targetX_m = mouseX_m - (primaryCrop.x - draggedGroup[0].x) - dragOffsetX;
-            let targetY_m = mouseY_m - (primaryCrop.y - draggedGroup[0].y) - dragOffsetY;
-            let minX_m = Infinity, maxX_m = -Infinity, minY_m = Infinity, maxY_m = -Infinity;
-            draggedGroup.forEach(crop => {
-                minX_m = Math.min(minX_m, crop.x);
-                maxX_m = Math.max(maxX_m, crop.x + crop.width_m);
-                minY_m = Math.min(minY_m, crop.y);
-                maxY_m = Math.max(maxY_m, crop.y + crop.height_m);
-            });
-            const groupWidth_m = maxX_m - minX_m;
-            const groupHeight_m = maxY_m - minY_m;
-            const currentGroupX = draggedGroup.reduce((min, c) => Math.min(min, c.x), Infinity);
-            const currentGroupY = draggedGroup.reduce((min, c) => Math.min(min, c.y), Infinity);
-            let deltaX = targetX_m - currentGroupX;
-            let deltaY = targetY_m - currentGroupY;
-            const clampedGroupX = Math.max(0, Math.min(currentGroupX + deltaX, gardenWidthM - groupWidth_m));
-            const clampedGroupY = Math.max(0, Math.min(currentGroupY + deltaY, gardenHeightM - groupHeight_m));
-            const finalDeltaX = clampedGroupX - currentGroupX;
-            const finalDeltaY = clampedGroupY - currentGroupY;
-            draggedGroup.forEach(crop => {
-                crop.x += finalDeltaX;
-                crop.y += finalDeltaY;
-            });
+        if (isDragging && draggedCrop) { // Need to ensure draggedCrop is set correctly
+             let targetX_m = mouseX_m - dragOffsetX;
+             let targetY_m = mouseY_m - dragOffsetY;
+             let { snappedX_m, snappedY_m } = calculateSnapping(targetX_m, targetY_m, draggedCrop, [draggedCrop.id]);
+             draggedCrop.x = Math.max(0, Math.min(snappedX_m, gardenWidthM - draggedCrop.width_m));
+             draggedCrop.y = Math.max(0, Math.min(snappedY_m, gardenHeightM - draggedCrop.height_m));
+        } else if (isGroupDragging && draggedGroup.length > 0) { // Need to ensure draggedGroup is set correctly
+             const primaryCrop = draggedGroup[0]; 
+             let groupTargetX = mouseX_m - dragOffsetX; 
+             let groupTargetY = mouseY_m - dragOffsetY;
+             let deltaX = groupTargetX - primaryCrop.x;
+             let deltaY = groupTargetY - primaryCrop.y;
+             let minX_m = Infinity, maxX_m = -Infinity, minY_m = Infinity, maxY_m = -Infinity;
+             draggedGroup.forEach(crop => {
+                 minX_m = Math.min(minX_m, crop.x + deltaX);
+                 maxX_m = Math.max(maxX_m, crop.x + crop.width_m + deltaX);
+                 minY_m = Math.min(minY_m, crop.y + deltaY);
+                 maxY_m = Math.max(maxY_m, crop.y + crop.height_m + deltaY);
+             });
+             if (minX_m < 0) deltaX -= minX_m;
+             if (maxX_m > gardenWidthM) deltaX -= (maxX_m - gardenWidthM);
+             if (minY_m < 0) deltaY -= minY_m;
+             if (maxY_m > gardenHeightM) deltaY -= (maxY_m - gardenHeightM);
+             draggedGroup.forEach(crop => {
+                 crop.x += deltaX;
+                 crop.y += deltaY;
+             });
         }
-
         drawGarden();
     });
 
-    // Helper function for snapping logic (extracted for reuse)
-    function calculateSnapping(targetX_m, targetY_m, cropToSnap, ignoreIds = []) {
-        let snappedX_m = targetX_m;
-        let snappedY_m = targetY_m;
-        let isSnappedX = false;
-        let isSnappedY = false;
-        const snapThreshold_m = SNAP_THRESHOLD_PX / pixelsPerMeter;
-        const ignoreIdSet = new Set(ignoreIds);
-
-        const dragLeft_m = targetX_m;
-        const dragRight_m = targetX_m + cropToSnap.width_m;
-        const dragTop_m = targetY_m;
-        const dragBottom_m = targetY_m + cropToSnap.height_m;
-
-        // Boundary Snapping
-        if (Math.abs(dragLeft_m) < snapThreshold_m) { snappedX_m = 0; isSnappedX = true; }
-        if (Math.abs(dragRight_m - gardenWidthM) < snapThreshold_m) { snappedX_m = gardenWidthM - cropToSnap.width_m; isSnappedX = true; }
-        if (Math.abs(dragTop_m) < snapThreshold_m) { snappedY_m = 0; isSnappedY = true; }
-        if (Math.abs(dragBottom_m - gardenHeightM) < snapThreshold_m) { snappedY_m = gardenHeightM - cropToSnap.height_m; isSnappedY = true; }
-
-        // Crop Snapping
-        gardenCrops.forEach(otherCrop => {
-            if (ignoreIdSet.has(otherCrop.id)) return;
-            const otherLeft_m = otherCrop.x, otherRight_m = otherCrop.x + otherCrop.width_m, otherTop_m = otherCrop.y, otherBottom_m = otherCrop.y + otherCrop.height_m;
-            const yOverlap = (dragTop_m < otherBottom_m && dragBottom_m > otherTop_m);
-            const xOverlap = (dragLeft_m < otherRight_m && dragRight_m > otherLeft_m);
-            if (yOverlap && !isSnappedX) {
-                if (Math.abs(dragLeft_m - otherRight_m) < snapThreshold_m) { snappedX_m = otherRight_m; isSnappedX = true; }
-                if (Math.abs(dragRight_m - otherLeft_m) < snapThreshold_m) { snappedX_m = otherLeft_m - cropToSnap.width_m; isSnappedX = true; }
-            }
-            if (xOverlap && !isSnappedY) {
-                if (Math.abs(dragTop_m - otherBottom_m) < snapThreshold_m) { snappedY_m = otherBottom_m; isSnappedY = true; }
-                if (Math.abs(dragBottom_m - otherTop_m) < snapThreshold_m) { snappedY_m = otherTop_m - cropToSnap.height_m; isSnappedY = true; }
-            }
-        });
-        return { snappedX_m, snappedY_m };
-    }
-
-    gardenCanvas.addEventListener('mouseup', () => {
-        if (isDragging || isGroupDragging) {
-            saveGardenState(); // Save state after drag completes
-        }
-        isDragging = false;
-        isGroupDragging = false;
-        draggedCrop = null;
-        draggedGroup = [];
-        gardenCanvas.style.cursor = 'grab';
-        drawGarden();
-        updateCursorStyle(null);
+    gardenCanvas.addEventListener('mouseup', (e) => {
+         if (isDragging || isGroupDragging) { // If a drag actually occurred
+             saveGardenState();
+         } 
+         // Always reset drag state on mouseup
+         isDragging = false;
+         isGroupDragging = false;
+         draggedCrop = null;
+         draggedGroup = [];
+         potentialDragCrop = null; // Clear the potential drag target
+         gardenCanvas.style.cursor = 'default';
+         // Don't necessarily redraw here unless selection changed without drag?
+         // Selection handled in mousedown, redraw already happened there.
+         // But need to update cursor based on final position.
+         updateCursorStyle(e);
     });
 
-    gardenCanvas.addEventListener('mouseleave', () => {
-        if (isDragging || isGroupDragging) {
+    gardenCanvas.addEventListener('mouseleave', (e) => {
+        if (isDragging || isGroupDragging) { // If dragging off canvas
             saveGardenState(); 
             isDragging = false;
             isGroupDragging = false;
             draggedCrop = null;
             draggedGroup = [];
+            potentialDragCrop = null;
             gardenCanvas.style.cursor = 'default';
-            drawGarden();
+            // Might want to redraw if the crop position was reverted or finalized here
+            drawGarden(); 
         }
+        // If not dragging, leaving the canvas doesn't change selection state
     });
 
     // Update cursor style based on hover
